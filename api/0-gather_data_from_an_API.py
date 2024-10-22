@@ -1,39 +1,25 @@
 #!/usr/bin/python3
+"""
+Fetches data from an API
+and returns information about the employee's todo list progressss
+"""
 
-"""
-    python script that returns TODO list progress for a given employee ID
-"""
 import requests
-import sys
+from sys import argv
 
-def todo_of(employee_id):
-    todo_list = requests.get("https://jsonplaceholder.typicode.com/todos").json()
-    user_list = requests.get("https://jsonplaceholder.typicode.com/users").json()
+if __name__ == '__main__':
+    userId = argv[1]
+    user = f"https://jsonplaceholder.typicode.com/users/{userId}"
+    todo = f"https://jsonplaceholder.typicode.com/todos?userId={userId}"
+    user_info = requests.get(user).json()
+    todos_info = requests.get(todo).json()
 
-    user_name = user_list[employee_id]["name"]
-    user_id = user_list[employee_id]["id"]
+    employee_name = user_info["name"]
+    task_completed = list(filter(lambda obj:
+                                 (obj["completed"] is True), todos_info))
+    number_of_done_tasks = len(task_completed)
+    total_number_of_tasks = len(todos_info)
 
-    # Get all tasks for the user
-    done = [task for task in todo_list if task["userId"] == user_id]
-
-    # Count total tasks and completed tasks for this user
-    total_tasks = len(done)  # Total tasks assigned to this user
-    completed_tasks = sum(1 for task in done if task["completed"])  # Count of completed tasks
-
-    if done:
-        # Output in the desired format
-        print(f"Employee {user_name} is done with tasks({completed_tasks}/{total_tasks}):")
-        for task in done:
-            print(f"\t{task['title']}")
-    else:
-        print(f"Employee {user_name} has no tasks.")
-
-
-if __name__ == "__main__":
-    # Check if an argument was passed
-    if len(sys.argv) < 2:
-        print("Please provide an employee ID as an argument.")
-    else:
-        # Capture the employee ID from command line argument
-        employee_id = int(sys.argv[1])  # Convert to integer
-        todo_of(employee_id)
+    print("Employee {} is done with tasks({}/{}):".
+          format(employee_name, number_of_done_tasks, total_number_of_tasks))
+    [print("\t " + task["title"]) for task in task_completed]
